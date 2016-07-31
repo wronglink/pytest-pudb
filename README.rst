@@ -7,12 +7,15 @@ Pytest PuDB debugger integration based on pytest `PDB integration`_
 
 Use it as ``--pdb`` ``py.test`` command argument:
 
+
 .. code-block:: console
+
     py.test --pudb
 
 Or simply use ``pudb.set_trace`` inside your python code:
 
 .. code-block:: python
+
     def test_set_trace_integration():
         # No --capture=no need
         import pudb
