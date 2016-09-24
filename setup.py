@@ -8,7 +8,7 @@ setup(
     author_email='wronglink@gmail.com',
     url='https://github.com/wronglink/pytest-pudb',
     long_description=open('README.rst').read(),
-    version='0.1',
+    version='0.2',
     py_modules=['pytest_pudb'],
     entry_points={'pytest11': ['pudb = pytest_pudb']},
     install_requires=['pytest>=2.0', 'pudb'],
