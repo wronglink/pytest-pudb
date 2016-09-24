@@ -22,6 +22,13 @@ Or simply use ``pudb.set_trace`` inside your python code:
         pudb.set_trace()
         assert 1 == 2
 
+    def test_pudb_b_integration():
+        # No --capture=no need
+        import pudb.b
+        # traceback is set up here
+        assert 1 == 2
+
+
 See also `pytest`_ and `pudb`_ projects.
 
 
