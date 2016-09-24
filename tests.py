@@ -1,4 +1,6 @@
-import pudb
+def test_pudb_b_integration():
+    import pudb.b
+    assert 1 == 2
 
 
 def test_set_trace_integration():
