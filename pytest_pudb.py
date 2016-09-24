@@ -16,10 +16,21 @@ def pytest_configure(config):
         config.pluginmanager.register(PuDBInvoke(), 'pudbinvoke')
 
     pudb_wrapper = PuDBWrapper(config)
-    old = (pudb.set_trace,)
+
+    old_set_trace = pudb.set_trace
+    old_import = __builtins__['__import__']
+
+    def pudb_b_import(name, *args, **kwargs):
+        if name == 'pudb.b':
+            return pudb_wrapper.set_trace(2)
+        return old_import(name, *args, **kwargs)
+
+    __builtins__['__import__'] = pudb_b_import
 
     def fin():
-        pudb.set_trace, = old
+        pudb.set_trace = old_set_trace
+        __builtins__['__import__'] = old_import
+
     pudb.set_trace = pudb_wrapper.set_trace
     config._cleanup.append(fin)
 
@@ -43,12 +54,12 @@ class PuDBWrapper(object):
             tw.sep(">", "PuDB set_trace (IO-capturing turned off)")
             self.pluginmanager.hook.pytest_enter_pdb(config=self.config)
 
-    def set_trace(self):
-        """ invoke PuDB set_trace debugging, dropping any IO capturing. """
+    def set_trace(self, depth=1):
+        """ wrap pudb.set_trace, dropping any IO capturing. """
         self.disable_io_capture()
         dbg = Debugger()
         pudb.set_interrupt_handler()
-        dbg.set_trace(sys._getframe().f_back)
+        dbg.set_trace(sys._getframe(depth))
 
 
 class PuDBInvoke(object):
