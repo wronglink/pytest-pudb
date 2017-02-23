@@ -9,5 +9,5 @@ def test_set_trace_integration():
     assert 1 == 2
 
 
-def test_pudb_inteagration():
+def test_pudb_integration():
     assert 1 == 2
