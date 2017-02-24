@@ -76,7 +76,7 @@ class PuDBInvoke(object):
             sys.stderr.write("INTERNALERROR> %s\n" %line)
             sys.stderr.flush()
         tb = _postmortem_traceback(excinfo)
-        post_mortem(tb)
+        post_mortem(tb, excinfo)
 
 
 def _enter_pudb(node, excinfo, rep):
@@ -89,7 +89,7 @@ def _enter_pudb(node, excinfo, rep):
     rep.toterminal(tw)
     tw.sep(">", "entering PuDB")
     tb = _postmortem_traceback(excinfo)
-    post_mortem(tb)
+    post_mortem(tb, excinfo)
     rep._pdbshown = True
     return rep
 
@@ -104,12 +104,12 @@ def _postmortem_traceback(excinfo):
         return excinfo._excinfo[2]
 
 
-def post_mortem(tb):
+def post_mortem(tb, excinfo):
     dbg = Debugger()
     stack, i = dbg.get_stack(None, tb)
     dbg.reset()
     i = _find_last_non_hidden_frame(stack)
-    dbg.interaction(stack[i][0])
+    dbg.interaction(stack[i][0], excinfo._excinfo)
 
 
 def _find_last_non_hidden_frame(stack):
