@@ -7,7 +7,8 @@ setup(
     author='Michael Elovskikh',
     author_email='wronglink@gmail.com',
     url='https://github.com/wronglink/pytest-pudb',
-    long_description=open('README.rst').read(),
+    long_description=open('README.rst').read() + '\n\n' +
+                     open('HISTORY.rst').read(),
     version='0.2',
     py_modules=['pytest_pudb'],
     entry_points={'pytest11': ['pudb = pytest_pudb']},
