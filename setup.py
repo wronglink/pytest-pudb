@@ -9,7 +9,7 @@ setup(
     url='https://github.com/wronglink/pytest-pudb',
     long_description=open('README.rst').read() + '\n\n' +
                      open('HISTORY.rst').read(),
-    version='0.2',
+    version='0.4',
     py_modules=['pytest_pudb'],
     entry_points={'pytest11': ['pudb = pytest_pudb']},
     install_requires=['pytest>=2.0', 'pudb'],
