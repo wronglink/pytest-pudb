@@ -1,6 +1,11 @@
 History
 -------
 
+0.5 (2017-02-25)
+++++++++++++++++
+
+- Fixed pypi package by adding MANIFEST.in
+
 0.4 (2017-02-24)
 ++++++++++++++++
 
