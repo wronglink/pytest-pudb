@@ -2,6 +2,10 @@
 pytest-pudb
 ===========
 
+.. image:: https://travis-ci.org/wronglink/pytest-pudb.svg?branch=master
+   :target: https://travis-ci.org/wronglink/pytest-pudb
+   :alt: Travis-ci: continuous integration status.
+
 Pytest PuDB debugger integration based on pytest `PDB integration`_
 
 
