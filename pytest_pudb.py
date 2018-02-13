@@ -48,7 +48,7 @@ class PuDBWrapper(object):
         if self.pluginmanager is not None:
             capman = self.pluginmanager.getplugin("capturemanager")
             if capman:
-                capman.suspendcapture(in_=True)
+                _suspend_capture(capman, in_=True)
             tw = self.pluginmanager.getplugin("terminalreporter")._tw
             tw.line()
             tw.sep(">", "PuDB set_trace (IO-capturing turned off)")
@@ -66,7 +66,7 @@ class PuDBInvoke(object):
     def pytest_exception_interact(self, node, call, report):
         capman = node.config.pluginmanager.getplugin("capturemanager")
         if capman:
-            out, err = capman.suspendcapture(in_=True)
+            out, err = _suspend_capture(capman, in_=True)
             sys.stdout.write(out)
             sys.stdout.write(err)
         _enter_pudb(node, call.excinfo, report)
@@ -117,3 +117,11 @@ def _find_last_non_hidden_frame(stack):
     while i and stack[i][0].f_locals.get("__tracebackhide__", False):
         i -= 1
     return i
+
+
+def _suspend_capture(capman, *args, **kwargs):
+    if hasattr(capman, 'suspendcapture'):
+        return capman.suspendcapture(*args, **kwargs)
+    else:
+        return capman.suspend_global_capture(*args, **kwargs)
+
