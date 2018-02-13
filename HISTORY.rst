@@ -1,6 +1,11 @@
 History
 -------
 
+0.6 (2018-02-13)
+++++++++++++++++
+
+- Fixed pytest 3.3.1+ compatibility (by `@noirbizarre <https://github.com/noirbizarre>`_)
+
 0.5 (2017-02-25)
 ++++++++++++++++
 
