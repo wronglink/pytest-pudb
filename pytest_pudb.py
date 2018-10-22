@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 import pudb
 import sys
+import warnings
+
 from pudb.debugger import Debugger
 
 
@@ -121,6 +123,9 @@ def _find_last_non_hidden_frame(stack):
 
 def _suspend_capture(capman, *args, **kwargs):
     if hasattr(capman, 'suspendcapture'):
+        warnings.warn('You are using the outdated version of pytest. '
+                      'The support for this version will be dropped in the future pytest-pudb versions.',
+                      DeprecationWarning)
         return capman.suspendcapture(*args, **kwargs)
     else:
         return capman.suspend_global_capture(*args, **kwargs)
