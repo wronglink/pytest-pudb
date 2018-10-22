@@ -123,10 +123,19 @@ def _find_last_non_hidden_frame(stack):
 
 def _suspend_capture(capman, *args, **kwargs):
     if hasattr(capman, 'suspendcapture'):
+        # pytest changed the suspend capture API since v3.3.1
+        # see: https://github.com/pytest-dev/pytest/pull/2801
+        # TODO: drop this case after pytest v3.3.1+ is minimal required
         warnings.warn('You are using the outdated version of pytest. '
                       'The support for this version will be dropped in the future pytest-pudb versions.',
                       DeprecationWarning)
         return capman.suspendcapture(*args, **kwargs)
-    else:
+
+    if not hasattr(capman, 'snap_global_capture'):
+        # pytest split suspend_global_capture into 2 calls since v3.7.3
+        # see: https://github.com/pytest-dev/pytest/pull/3832
+        # TODO: drop this case after pytest v3.7.3+ is minimal required
         return capman.suspend_global_capture(*args, **kwargs)
 
+    capman.suspend_global_capture(*args, **kwargs)
+    return capman.read_global_capture()
