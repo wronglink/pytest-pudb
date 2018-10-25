@@ -1,6 +1,14 @@
 History
 -------
 
+0.7.0 (2018-10-25)
+++++++++++++++++++
+
+- Added pu.db support
+- Fixed pytest 3.7.3+ compatibility
+- Switched to semantic versioning
+- Build package wheels
+
 0.6 (2018-02-13)
 ++++++++++++++++
 
