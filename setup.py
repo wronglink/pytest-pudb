@@ -20,6 +20,7 @@ setup(
         'dev': [
             'pexpect',
             'tox',
+            'flake8',
         ]
     },
     classifiers=[
