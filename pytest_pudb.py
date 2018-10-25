@@ -6,6 +6,12 @@ import warnings
 
 from pudb.debugger import Debugger
 
+try:
+    import builtins
+except ImportError:
+    import __builtins__
+    builtins = __builtins__
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
@@ -20,18 +26,18 @@ def pytest_configure(config):
     pudb_wrapper = PuDBWrapper(config)
 
     old_set_trace = pudb.set_trace
-    old_import = __builtins__['__import__']
+    old_import = builtins.__dict__['__import__']
 
     def pudb_b_import(name, *args, **kwargs):
         if name == 'pudb.b':
             return pudb_wrapper.set_trace(2)
         return old_import(name, *args, **kwargs)
 
-    __builtins__['__import__'] = pudb_b_import
+    builtins.__dict__['__import__'] = pudb_b_import
 
     def fin():
         pudb.set_trace = old_set_trace
-        __builtins__['__import__'] = old_import
+        builtins.__dict__['__import__'] = old_import
 
     pudb.set_trace = pudb_wrapper.set_trace
     config._cleanup.append(fin)
