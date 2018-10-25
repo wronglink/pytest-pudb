@@ -1,6 +1,3 @@
-import sys
-
-
 pytest_plugins = "pytester"
 
 
@@ -32,7 +29,21 @@ def test_pudb_set_trace_integration(testdir):
     child.sendeof()
 
 
-def test_pudb_b_interaction(testdir):
+def test_pu_db_integration(testdir):
+    p1 = testdir.makepyfile("""
+        def test_1():
+            import pudb
+            pu.db
+            assert 1
+    """)
+    child = testdir.spawn_pytest(p1)
+    child.expect("PuDB")
+    child.expect("\?\:help")
+    child.expect("V\x1b\[0;30;47mariables:")
+    child.sendeof()
+
+
+def test_pudb_b_integration(testdir):
     p1 = testdir.makepyfile("""
         def test_1():
             import pudb.b
