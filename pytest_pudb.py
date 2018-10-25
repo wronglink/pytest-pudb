@@ -4,12 +4,6 @@ import pudb
 import sys
 import warnings
 
-try:
-    import builtins
-except ImportError:
-    import __builtins__
-    builtins = __builtins__
-
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
