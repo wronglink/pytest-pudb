@@ -72,7 +72,7 @@ class PuDBWrapper(object):
         https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_internalerror
         """
         for line in str(excrepr).split("\n"):
-            sys.stderr.write("INTERNALERROR> %s\n" %line)
+            sys.stderr.write("INTERNALERROR> {}\n".format(line))
             sys.stderr.flush()
         tb = _postmortem_traceback(excinfo)
         post_mortem(tb, excinfo)
