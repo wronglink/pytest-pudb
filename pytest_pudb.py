@@ -4,8 +4,6 @@ import pudb
 import sys
 import warnings
 
-from pudb.debugger import Debugger
-
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
@@ -14,27 +12,13 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    if config.getvalue("usepudb"):
-        config.pluginmanager.register(PuDBInvoke(), 'pudbinvoke')
-
     pudb_wrapper = PuDBWrapper(config)
 
-    old_set_trace = pudb.set_trace
-    old_import = __builtins__['__import__']
+    if config.getvalue("usepudb"):
+        config.pluginmanager.register(pudb_wrapper, 'pudb_wrapper')
 
-    def pudb_b_import(name, *args, **kwargs):
-        if name == 'pudb.b':
-            return pudb_wrapper.set_trace(2)
-        return old_import(name, *args, **kwargs)
-
-    __builtins__['__import__'] = pudb_b_import
-
-    def fin():
-        pudb.set_trace = old_set_trace
-        __builtins__['__import__'] = old_import
-
-    pudb.set_trace = pudb_wrapper.set_trace
-    config._cleanup.append(fin)
+    pudb_wrapper.mount()
+    config._cleanup.append(pudb_wrapper.unmount)
 
 
 class PuDBWrapper(object):
@@ -45,51 +29,75 @@ class PuDBWrapper(object):
     def __init__(self, config):
         self.config = config
         self.pluginmanager = config.pluginmanager
+        self._pudb_get_debugger = None
+
+    def mount(self):
+        self._pudb_get_debugger = pudb._get_debugger
+        pudb._get_debugger = self._get_debugger
+
+    def unmount(self):
+        if self._pudb_get_debugger:
+            pudb._get_debugger = self._pudb_get_debugger
+            self._pudb_get_debugger = None
 
     def disable_io_capture(self):
         if self.pluginmanager is not None:
             capman = self.pluginmanager.getplugin("capturemanager")
             if capman:
-                _suspend_capture(capman, in_=True)
+                outerr = self._suspend_capture(capman, in_=True)
+                if outerr:
+                    out, err = outerr
+                    sys.stdout.write(out)
+                    sys.stdout.write(err)
             tw = self.pluginmanager.getplugin("terminalreporter")._tw
             tw.line()
-            tw.sep(">", "PuDB set_trace (IO-capturing turned off)")
+            tw.sep(">", "entering PuDB (IO-capturing turned off)")
             self.pluginmanager.hook.pytest_enter_pdb(config=self.config)
 
-    def set_trace(self, depth=1):
-        """ wrap pudb.set_trace, dropping any IO capturing. """
+    def _get_debugger(self, **kwargs):
         self.disable_io_capture()
-        dbg = Debugger()
-        pudb.set_interrupt_handler()
-        dbg.set_trace(sys._getframe(depth))
+        return self._pudb_get_debugger.__call__(**kwargs)
 
-
-class PuDBInvoke(object):
     def pytest_exception_interact(self, node, call, report):
-        capman = node.config.pluginmanager.getplugin("capturemanager")
-        if capman:
-            out, err = _suspend_capture(capman, in_=True)
-            sys.stdout.write(out)
-            sys.stdout.write(err)
+        """
+        Pytest plugin interface for exception handling
+        https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_exception_interact
+        """
+        self.disable_io_capture()
         _enter_pudb(node, call.excinfo, report)
 
     def pytest_internalerror(self, excrepr, excinfo):
+        """
+        Pytest plugin interface for internal errors handling
+        https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_internalerror
+        """
         for line in str(excrepr).split("\n"):
             sys.stderr.write("INTERNALERROR> %s\n" %line)
             sys.stderr.flush()
         tb = _postmortem_traceback(excinfo)
         post_mortem(tb, excinfo)
 
+    def _suspend_capture(self, capman, *args, **kwargs):
+        if hasattr(capman, 'suspendcapture'):
+            # pytest changed the suspend capture API since v3.3.1
+            # see: https://github.com/pytest-dev/pytest/pull/2801
+            # TODO: drop this case after pytest v3.3.1+ is minimal required
+            warnings.warn('You are using the outdated version of pytest. '
+                          'The support for this version will be dropped in the future pytest-pudb versions.',
+                          DeprecationWarning)
+            return capman.suspendcapture(*args, **kwargs)
+
+        if not hasattr(capman, 'snap_global_capture'):
+            # pytest split suspend_global_capture into 2 calls since v3.7.3
+            # see: https://github.com/pytest-dev/pytest/pull/3832
+            # TODO: drop this case after pytest v3.7.3+ is minimal required
+            return capman.suspend_global_capture(*args, **kwargs)
+
+        capman.suspend_global_capture(*args, **kwargs)
+        return capman.read_global_capture()
+
 
 def _enter_pudb(node, excinfo, rep):
-    # XXX we re-use the TerminalReporter's terminalwriter
-    # because this seems to avoid some encoding related troubles
-    # for not completely clear reasons.
-    tw = node.config.pluginmanager.getplugin("terminalreporter")._tw
-    tw.line()
-    tw.sep(">", "traceback")
-    rep.toterminal(tw)
-    tw.sep(">", "entering PuDB")
     tb = _postmortem_traceback(excinfo)
     post_mortem(tb, excinfo)
     rep._pdbshown = True
@@ -107,7 +115,7 @@ def _postmortem_traceback(excinfo):
 
 
 def post_mortem(tb, excinfo):
-    dbg = Debugger()
+    dbg = pudb._get_debugger()
     stack, i = dbg.get_stack(None, tb)
     dbg.reset()
     i = _find_last_non_hidden_frame(stack)
@@ -119,23 +127,3 @@ def _find_last_non_hidden_frame(stack):
     while i and stack[i][0].f_locals.get("__tracebackhide__", False):
         i -= 1
     return i
-
-
-def _suspend_capture(capman, *args, **kwargs):
-    if hasattr(capman, 'suspendcapture'):
-        # pytest changed the suspend capture API since v3.3.1
-        # see: https://github.com/pytest-dev/pytest/pull/2801
-        # TODO: drop this case after pytest v3.3.1+ is minimal required
-        warnings.warn('You are using the outdated version of pytest. '
-                      'The support for this version will be dropped in the future pytest-pudb versions.',
-                      DeprecationWarning)
-        return capman.suspendcapture(*args, **kwargs)
-
-    if not hasattr(capman, 'snap_global_capture'):
-        # pytest split suspend_global_capture into 2 calls since v3.7.3
-        # see: https://github.com/pytest-dev/pytest/pull/3832
-        # TODO: drop this case after pytest v3.7.3+ is minimal required
-        return capman.suspend_global_capture(*args, **kwargs)
-
-    capman.suspend_global_capture(*args, **kwargs)
-    return capman.read_global_capture()
