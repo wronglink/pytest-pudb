@@ -4,7 +4,7 @@ import pudb
 import sys
 import warnings
 
-from pudb.debugger import Debugger
+#from pudb.debugger import Debugger
 
 try:
     import builtins
@@ -24,23 +24,8 @@ def pytest_configure(config):
         config.pluginmanager.register(PuDBInvoke(), 'pudbinvoke')
 
     pudb_wrapper = PuDBWrapper(config)
-
-    old_set_trace = pudb.set_trace
-    old_import = builtins.__dict__['__import__']
-
-    def pudb_b_import(name, *args, **kwargs):
-        if name == 'pudb.b':
-            return pudb_wrapper.set_trace(2)
-        return old_import(name, *args, **kwargs)
-
-    builtins.__dict__['__import__'] = pudb_b_import
-
-    def fin():
-        pudb.set_trace = old_set_trace
-        builtins.__dict__['__import__'] = old_import
-
-    pudb.set_trace = pudb_wrapper.set_trace
-    config._cleanup.append(fin)
+    pudb_wrapper.mount()
+    config._cleanup.append(pudb_wrapper.unmount)
 
 
 class PuDBWrapper(object):
@@ -51,6 +36,16 @@ class PuDBWrapper(object):
     def __init__(self, config):
         self.config = config
         self.pluginmanager = config.pluginmanager
+        self._pudb_get_debugger = None
+
+    def mount(self):
+        self._pudb_get_debugger = pudb._get_debugger
+        pudb._get_debugger = self._get_debugger
+
+    def unmount(self):
+        if self._pudb_get_debugger:
+            pudb._get_debugger = self._pudb_get_debugger
+            self._pudb_get_debugger = None
 
     def disable_io_capture(self):
         if self.pluginmanager is not None:
@@ -62,12 +57,9 @@ class PuDBWrapper(object):
             tw.sep(">", "PuDB set_trace (IO-capturing turned off)")
             self.pluginmanager.hook.pytest_enter_pdb(config=self.config)
 
-    def set_trace(self, depth=1):
-        """ wrap pudb.set_trace, dropping any IO capturing. """
+    def _get_debugger(self, **kwargs):
         self.disable_io_capture()
-        dbg = Debugger()
-        pudb.set_interrupt_handler()
-        dbg.set_trace(sys._getframe(depth))
+        return self._pudb_get_debugger.__call__(**kwargs)
 
 
 class PuDBInvoke(object):
