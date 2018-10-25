@@ -6,6 +6,5 @@ python:
   - 3.5
   - 3.6
 install:
-  - python setup.py install
-  - pip install -rdev_requirements.txt
+  - pip install -e .[dev]
 script: pytest

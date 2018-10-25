@@ -12,7 +12,16 @@ setup(
     version='0.6',
     py_modules=['pytest_pudb'],
     entry_points={'pytest11': ['pudb = pytest_pudb']},
-    install_requires=['pytest>=2.0', 'pudb'],
+    install_requires=[
+        'pytest>=2.0',
+        'pudb',
+    ],
+    extras_require={
+        'dev': [
+            'pexpect',
+            'tox',
+        ]
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Topic :: Software Development :: Testing',
