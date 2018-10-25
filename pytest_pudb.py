@@ -4,8 +4,6 @@ import pudb
 import sys
 import warnings
 
-#from pudb.debugger import Debugger
-
 try:
     import builtins
 except ImportError:
