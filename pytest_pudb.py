@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import pudb
 import sys
 import warnings
+import _pytest.unittest
 
 
 def pytest_addoption(parser):
@@ -26,6 +27,7 @@ class PuDBWrapper(object):
         self.config = config
         self.pluginmanager = config.pluginmanager
         self._pudb_get_debugger = None
+        self._test_case_function_runtest = None
 
     @property
     def with_pudb_option(self):
@@ -38,10 +40,24 @@ class PuDBWrapper(object):
         if self.with_pudb_option:
             self.config.pluginmanager.register(self, 'pudb_wrapper')
 
+            def runtest(self):
+                # disables tearDown and cleanups for post mortem debugging
+                # see: https://github.com/pytest-dev/pytest/pull/1890
+                if self._handle_skip():
+                    return
+                self._testcase.debug()
+
+            self._test_case_function_runtest = _pytest.unittest.TestCaseFunction.runtest
+            _pytest.unittest.TestCaseFunction.runtest = runtest
+
     def unmount(self):
         if self._pudb_get_debugger:
             pudb._get_debugger = self._pudb_get_debugger
             self._pudb_get_debugger = None
+
+        if self._test_case_function_runtest:
+            _pytest.unittest.TestCaseFunction.runtest = self._test_case_function_runtest
+            self._test_case_function_runtest = None
 
     def disable_io_capture(self):
         if self.pluginmanager is not None:
