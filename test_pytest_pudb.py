@@ -18,6 +18,28 @@ def test_pudb_interaction(testdir):
     child.sendeof()
 
 
+def test_pudb_unittest_teardown_interaction(testdir):
+    p1 = testdir.makepyfile("""
+        import unittest
+        class Blub(unittest.TestCase):
+            def tearDown(self):
+                self.a = False
+            def test_false(self):
+                self.a = True
+                self.fail()
+    """)
+    child = testdir.spawn_pytest("--pudb %s" % p1)
+    child.expect("PuDB")
+    child.expect(HELP_MESSAGE)
+    child.expect("PROCESSING EXCEPTION")
+    child.expect(VARIABLES_TABLE)
+    child.send('V')  # Move to variables
+    child.send('n')  # Add watch expression
+    child.expect('Add Watch Expression')
+    child.sendline('self.a')  # Set self.a
+    child.expect('self.a: \x1b\\[0;30;42mTrue')
+    child.sendeof()
+
 def test_pudb_set_trace_integration(testdir):
     p1 = testdir.makepyfile("""
         def test_1():
