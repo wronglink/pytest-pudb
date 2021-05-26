@@ -1,6 +1,17 @@
 """ interactive debugging with PuDB, the Python Debugger. """
 from __future__ import absolute_import
+
+import os
+
+_home_in_env = "HOME" in os.environ
+if not _home_in_env:
+    os.environ["HOME"] = os.path.expanduser("~")
+
 import pudb
+
+if not _home_in_env:
+    del os.environ["HOME"]
+
 import sys
 import warnings
 
