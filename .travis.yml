@@ -17,5 +17,17 @@ matrix:
     - python: 3.7
       dist: xenial
       env: TOXENV=py37
+    - python: 3.8
+      dist: xenial
+      env: TOXENV=py38
+    - python: 3.9
+      dist: xenial
+      env: TOXENV=py39
+    - python: 3.10
+      dist: bionic
+      env: TOXENV=py310
+    - python: 3.11
+      dist: bionic
+      env: TOXENV=py311
     - python: 3.6
       env: TOXENV=flake8
