@@ -52,7 +52,7 @@ class PuDBWrapper(object):
             tw = self.pluginmanager.getplugin("terminalreporter")._tw
             tw.line()
             tw.sep(">", "entering PuDB (IO-capturing turned off)")
-            self.pluginmanager.hook.pytest_enter_pdb(config=self.config)
+            self.pluginmanager.hook.pytest_enter_pdb(config=self.config, pdb=self._pudb_get_debugger)
 
     def _get_debugger(self, **kwargs):
         self.disable_io_capture()
