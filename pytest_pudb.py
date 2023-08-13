@@ -1,8 +1,12 @@
 """ interactive debugging with PuDB, the Python Debugger. """
 from __future__ import absolute_import
-import pudb
+
 import sys
 import warnings
+
+import pudb
+
+ENTER_MESSAGE = "entering PuDB (IO-capturing turned off)"
 
 
 def pytest_addoption(parser):
@@ -51,7 +55,7 @@ class PuDBWrapper(object):
                     sys.stdout.write(err)
             tw = self.pluginmanager.getplugin("terminalreporter")._tw
             tw.line()
-            tw.sep(">", "entering PuDB (IO-capturing turned off)")
+            tw.sep(">", ENTER_MESSAGE)
             self.pluginmanager.hook.pytest_enter_pdb(config=self.config)
 
     def _get_debugger(self, **kwargs):
@@ -63,7 +67,6 @@ class PuDBWrapper(object):
         Pytest plugin interface for exception handling
         https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_exception_interact
         """
-        self.disable_io_capture()
         _enter_pudb(node, call.excinfo, report)
 
     def pytest_internalerror(self, excrepr, excinfo):
